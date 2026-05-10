@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zamzam Translator</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #fdf2f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 520px;
+      text-align: center;
+    }
+    h1 { color: #d60070; margin-bottom: 18px; }
+    textarea {
+      width: 100%;
+      height: 110px;
+      padding: 10px;
+      border-radius: 9px;
+      border: 1px solid #ccc;
+      resize: none;
+      font-size: 16px;
+    }
+    select, button {
+      margin-top: 14px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    select { border: 1px solid #ccc; }
+    button {
+      background: #d60070;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover { background: #e60086; }
+    #output {
+      margin-top: 18px;
+      background: #fde8f3;
+      padding: 15px;
+      border-radius: 10px;
+      min-height: 50px;
+      word-wrap: break-word;
+    }
+    .btn-group { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Zamzam Translator</h1>
+
+    <textarea id="inputText" placeholder="اكتب النص هنا..."></textarea>
+
+    <div class="btn-group">
+      <select id="languageSelect">
+        <option value="ar2zh">Arabic → Chinese</option>
+        <option value="zh2ar">Chinese → Arabic</option>
+      </select>
+      <button id="translateBtn">ترجمة</button>
+      <button id="switchBtn">تبديل اللغة</button>
+      <button id="copyBtn">نسخ</button>
+    </div>
+
+    <div id="output"></div>
+  </div>
+
+  <script>
+    // القاموس العربي → صيني (~150 كلمة)
+    const dictionary = {
+      "أنا":"我","أنت":"你","هو":"他","هي":"她","نحن":"我们","هم":"他们",
+      "مرحباً":"你好","مرحبا":"你好","أهلاً":"你好","مع السلامة":"再见","وداعاً":"再见",
+      "شكراً":"谢谢","عفواً":"不客气","نعم":"是","لا":"不是","من فضلك":"请","آسف":"对不起",
+      "لا بأس":"没关系","أين":"哪里","متى":"什么时候","ماذا":"什么","لماذا":"为什么","كيف":"怎么",
+      "كم":"多少","الوقت":"时间","اليوم":"今天","غداً":"明天","أمس":"昨天","سعيد":"高兴",
+      "حزين":"难过","جيد":"好","سيئ":"坏","طعام":"食物","شراب":"饮料","ماء":"水","خبز":"面包",
+      "شاي":"茶","قهوة":"咖啡","قلب":"心","عين":"眼睛","أذن":"耳朵","يد":"手","رجل":"腿",
+      "رأس":"头","البيت":"房子","مدرسة":"学校","جامعة":"大学","سوق":"市场","مدينة":"城市",
+      "شارع":"街道","سيارة":"汽车","قطار":"火车","طائرة":"飞机","باب":"门","نافذة":"窗户",
+      "كرسي":"椅子","طاولة":"桌子","كتاب":"书","قلم":"笔","ورقة":"纸","العمل":"工作",
+      "صديق":"朋友","عائلة":"家庭","أب":"爸爸","أم":"妈妈","أخ":"兄弟","أخت":"妹妹","طفل":"孩子",
+      "مرح":"玩","حب":"爱","كره":"讨厌","مساعدة":"帮助","سريع":"快","بطيء":"慢",
+      "كبير":"大","صغير":"小","جديد":"新","قديم":"旧","حار":"热","بارد":"冷","سعيد":"幸福",
+      "حياة":"生活","عمل":"工作","سماء":"天空","بحر":"海","نهر":"河","شمس":"太阳",
+      "قمر":"月亮","نجمة":"星星","أخضر":"绿色","أزرق":"蓝色","أحمر":"红色","أسود":"黑色",
+      "أبيض":"白色","أصفر":"黄色","زرق":"蓝色","ورد":"花","شجرة":"树","حيوان":"动物",
+      "قط":"猫","كلب":"狗","حصان":"马","بقرة":"牛","دجاج":"鸡","سمك":"鱼","سعادة":"快乐",
+      "حزن":"悲伤","ضحك":"笑","بكاء":"哭","صوت":"声音","صورة":"图片","تلفاز":"电视",
+      "هاتف":"电话","كمبيوتر":"电脑"
+    };
+
+    // إنشاء قاموس صيني → عربي تلقائياً
+    const dictionaryZh2Ar = {};
+    Object.keys(dictionary).forEach(ar => {
+      const zh = dictionary[ar];
+      dictionaryZh2Ar[zh] = ar;
+    });
+
+    const inputText = document.getElementById('inputText');
+    const translateBtn = document.getElementById('translateBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const switchBtn = document.getElementById('switchBtn');
+    const output = document.getElementById('output');
+    const languageSelect = document.getElementById('languageSelect');
+
+    // وظيفة الترجمة
+    function translateText() {
+      const text = inputText.value.trim();
+      if(!text) { output.textContent = ""; return; }
+
+      const lang = languageSelect.value;
+      let result = "";
+
+      if(lang === "ar2zh") {
+        const words = text.split(/\s+/);
+        words.forEach(w => {
+          result += dictionary[w] ? dictionary[w] : w;
+          result += " ";
+        });
+      } else { // صيني → عربي
+        let temp = text;
+        Object.keys(dictionaryZh2Ar).forEach(key => {
+          if(temp.includes(key)) {
+            temp = temp.replaceAll(key, dictionaryZh2Ar[key]);
+          }
+        });
+        result = temp;
+      }
+
+      output.textContent = result.trim();
+    }
+
+    // نسخ النص
+    function copyText() {
+      if(output.textContent) {
+        navigator.clipboard.writeText(output.textContent);
+        alert("تم نسخ الترجمة!");
+      }
+    }
+
+    // تبديل اللغة
+    function switchLanguage() {
+      // تغيير قيمة القائمة لتتناسب مع اللغة الجديدة
+      if(languageSelect.value === "ar2zh") {
+        languageSelect.value = "zh2ar";
+      } else {
+        languageSelect.value = "ar2zh";
+      }
+      translateText();
+    }
+
+    translateBtn.addEventListener('click', translateText);
+    copyBtn.addEventListener('click', copyText);
+    switchBtn.addEventListener('click', switchLanguage);
+
+    inputText.addEventListener('keydown', function(e){
+      if(e.key === 'Enter' && !e.shiftKey){
+        e.preventDefault();
+        translateText();
+      }
+    });
+  </script>
+
+</body>
+</html>
