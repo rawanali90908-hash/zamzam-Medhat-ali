@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zamzam Translator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 class="main-title">Welcome to Zamzam Translator</h1>
+      <p>Type text below and get instant translation</p>
+    </header>
+
+    <main>
+      <textarea id="inputText" placeholder="Type Chinese or Arabic text here..."></textarea>
+      <button class="btn" onclick="translate()">Translate</button>
+      <button class="btn" onclick="switchDirection()">Switch Direction</button>
+      <div id="outputContainer">
+        <p id="outputText">Your translation will appear here</p>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2026 Zamzam Translator</p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
